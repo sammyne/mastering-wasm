@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello World</title>
+</head>
+
+<body>
+
+  <script>
+    let str = "";
+
+    const importObj = {
+      env: {
+        print_char(c) {
+          str += String.fromCharCode(c);
+          if (c == 10) {
+            alert(c);
+          }
+        }
+      },
+    };
+
+    (
+      async () => {
+        let response = await fetch("hello-world.wasm");
+        let buf = await response.arrayBuffer();
+        let { instance } = await WebAssembly.instantiate(buf, importObj);
+        await instance.exports.main();
+      }
+    )();
+  </script>
+</body>
+
+</html>
