@@ -1,14 +1,5 @@
 # WebAssembly 原理与核心技术
 
-## 环境要求
+## 环境
 
-- Ubuntu 20.04
-
-## 环境准备
-
-```bash
-curl -L https://github.com/WebAssembly/wabt/releases/download/1.0.23/wabt-1.0.23-ubuntu.tar.gz |\
-  tar -zxv -C /opt/
-
-echo 'export PATH=/opt/wabt-1.0.23/bin:$PATH' >> ~/.bashrc
-```
+本项目的所有操作环境均基于这份 [Dockerfile](./docker/Dockerfile) 构建的 docker 镜像。
