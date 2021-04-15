@@ -1,4 +1,6 @@
-# WebAssembly 原理与核心技术
+# mastering-wasm 
+
+本项目主要整理 [WebAssembly 原理与核心技术] 的阅读笔记，并实现一个简化版 wasm 虚拟机。
 
 ## 环境
 
