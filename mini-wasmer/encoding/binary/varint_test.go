@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"testing"
+	"unsafe"
 
 	"github.com/sammyne/mastering-wasm/mini-wasmer/encoding/binary"
 )
@@ -30,7 +31,7 @@ func TestReadUvarint32(t *testing.T) {
 	}
 
 	for i, c := range testVector {
-		got, err := binary.ReadUvarint(bytes.NewReader(c.data), binary.Bits32)
+		got, err := binary.ReadUvarint(bytes.NewReader(c.data), binary.BitsLen32)
 		if !errors.Is(err, c.expect.err) {
 			t.Fatalf("#%d unexpected error: expect %v, got %v", i, c.expect.err, err)
 		}
@@ -62,7 +63,7 @@ func TestReadUvarint64(t *testing.T) {
 	}
 
 	for i, c := range testVector {
-		got, err := binary.ReadUvarint(bytes.NewReader(c.data), binary.Bits64)
+		got, err := binary.ReadUvarint(bytes.NewReader(c.data), binary.BitsLen64)
 		if !errors.Is(err, c.expect.err) {
 			t.Fatalf("#%d unexpected error: expect %v, got %v", i, c.expect.err, err)
 		}
@@ -90,7 +91,7 @@ func TestReadVarint32(t *testing.T) {
 	}
 
 	for i, c := range testVector {
-		got, err := binary.ReadVarint(bytes.NewReader(c.data), binary.Bits32)
+		got, err := binary.ReadVarint(bytes.NewReader(c.data), binary.BitsLen32)
 		if !errors.Is(err, c.expect.err) {
 			t.Fatalf("#%d unexpected error: expect %v, got %v", i, c.expect.err, err)
 		}
@@ -115,20 +116,27 @@ func TestReadVarint64(t *testing.T) {
 	}{
 		{
 			[]byte{0b11000000, 0b10111011, 0b01111000},
-			expect{val: -0x001e240},
+			expect{
+				val: Int64frombits(
+					0b11111111_11111111_11111111_11111111_11111111_11111110_00011101_11000000),
+			},
 		},
 	}
 
 	for i, c := range testVector {
-		got, err := binary.ReadVarint(bytes.NewReader(c.data), binary.Bits64)
+		got, err := binary.ReadVarint(bytes.NewReader(c.data), binary.BitsLen64)
 		if !errors.Is(err, c.expect.err) {
 			t.Fatalf("#%d unexpected error: expect %v, got %v", i, c.expect.err, err)
 		}
 
 		if c.expect.val != got {
-			expect2 := strconv.FormatUint(uint64(c.expect.val), 2)
-			got2 := strconv.FormatUint(uint64(got), 2)
-			t.Fatalf("#%d failed:\n expect %s,\n    got %s", i, expect2, got2)
+			//expect2 := strconv.FormatUint(uint64(c.expect.val), 2)
+			//got2 := strconv.FormatUint(uint64(got), 2)
+			t.Fatalf("#%d failed:\n expect %064b,\n    got %064b", i, c.expect.val, got)
 		}
 	}
+}
+
+func Int64frombits(b uint64) int64 {
+	return *(*int64)(unsafe.Pointer(&b))
 }

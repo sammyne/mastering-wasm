@@ -1,75 +1,30 @@
 package binary
 
 import (
-	"encoding/binary"
 	"io"
+	"math/bits"
+	"unsafe"
 )
 
-type bits uint8
+type bitsLen uint8
 
 const (
-	Bits32 bits = (1 << 5) << iota
-	Bits64
+	BitsLen32 bitsLen = (1 << 5) << iota
+	BitsLen64
 )
 
-func ReadUvarint(r io.ByteReader, bits bits) (uint64, error) {
-	maxLen := binary.MaxVarintLen32
-	if bits == Bits64 {
-		maxLen = binary.MaxVarintLen64
-	}
-
-	var out uint64
-	var s uint
-	ubits := uint(bits)
-	for i := 0; i < maxLen; i++ {
-		b, err := r.ReadByte()
-		if err != nil {
-			return 0, err
-		}
-
-		if b >= 0x80 {
-			out, s = out|uint64(b&0x7f)<<s, s+7
-			continue
-		}
-
-		if i == maxLen-1 && (b>>(ubits-s) > 0) {
-			return 0, ErrOverflow
-		}
-
-		return out | uint64(b&0x7f)<<s, nil
-	}
-
-	return 0, ErrOverflow
+func ReadUvarint(r io.ByteReader, bitsLen bitsLen) (uint64, error) {
+	out, _, err := readUvarint(r, bitsLen)
+	return out, err
 }
 
-func ReadVarint(r io.ByteReader, bits bits) (int64, error) {
-	maxLen := binary.MaxVarintLen32
-	if bits == Bits64 {
-		maxLen = binary.MaxVarintLen64
+func ReadVarint(r io.ByteReader, bitsLen bitsLen) (int64, error) {
+	out, last, err := readUvarint(r, bitsLen)
+	if err != nil {
+		return 0, err
 	}
 
-	var out int64
-	var s uint
-	ubits := uint(bits)
-	for i := 0; i < maxLen; i++ {
-		b, err := r.ReadByte()
-		if err != nil {
-			return 0, err
-		}
+	out |= (uint64(last) >> 6) * ^(1<<bits.Len64(out) - 1)
 
-		if b >= 0x80 {
-			out, s = out|int64(b&0x7f)<<s, s+7
-			continue
-		}
-
-		if i == maxLen-1 && (b>>(ubits-s) > 0) {
-			return 0, ErrOverflow
-		}
-
-		out, s = out|int64(b&0x7f)<<s, s+7
-		out |= (int64(b) >> 6) * (-1 << s)
-		return out, nil
-	}
-
-	return 0, ErrOverflow
+	return *(*int64)(unsafe.Pointer(&out)), nil
 }
