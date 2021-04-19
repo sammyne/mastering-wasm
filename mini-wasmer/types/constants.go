@@ -1,4 +1,4 @@
-package wasmer
+package types
 
 const FuncRef = 0x70
 
@@ -19,6 +19,21 @@ const (
 	PortTagTable
 	PortTagMemory
 	PortTagGlobal
+)
+
+const (
+	SectionIDCustom = iota
+	SectionIDType
+	SectionIDImport
+	SectionIDFunc
+	SectionIDTable
+	SectionIDMemory
+	SectionIDGlobal
+	SectionIDExport
+	SectionIDStart
+	SectionIDElement
+	SectionIDCode
+	SectionIDData
 )
 
 type ValueType = byte

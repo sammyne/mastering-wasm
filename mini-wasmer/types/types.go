@@ -1,4 +1,4 @@
-package wasmer
+package types
 
 type (
 	FuncIdx   = uint32
@@ -45,6 +45,7 @@ type ExportDescription struct {
 type Expr interface{}
 
 type FuncType struct {
+	Tag         byte
 	ParamTypes  []ValueType
 	ResultTypes []ValueType
 }
@@ -68,8 +69,8 @@ type Import struct {
 type ImportDescription struct {
 	Tag    PortTag
 	Func   TypeIdx
-	Table  TableType
-	Memory MemoryType
+	Table  Table
+	Memory Memory
 	Global GlobalType
 }
 
@@ -84,9 +85,9 @@ type Locals struct {
 	Type ValueType
 }
 
-type MemoryType = Limits
+type Memory = Limits
 
-type TableType struct {
+type Table struct {
 	ElementType byte
 	Limits      Limits
 }
