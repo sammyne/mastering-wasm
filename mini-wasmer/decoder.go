@@ -15,32 +15,32 @@ type Decoder struct {
 	*bytes.Reader
 }
 
-func (r *Decoder) DecodeBytes() ([]byte, error) {
-	n, err := r.DecodeVarint32()
+func (d *Decoder) DecodeBytes() ([]byte, error) {
+	n, err := d.DecodeUvarint32()
 	if err != nil {
 		return nil, fmt.Errorf("read bytes length: %w", err)
 	}
 
 	out := make([]byte, n)
-	if _, err := io.ReadFull(r.Reader, out); err != nil {
+	if _, err := io.ReadFull(d.Reader, out); err != nil {
 		return nil, fmt.Errorf("read full bytes: %w", err)
 	}
 
 	return out, nil
 }
 
-func (r *Decoder) DecodeFloat32() (float32, error) {
+func (d *Decoder) DecodeFloat32() (float32, error) {
 	var out uint32
-	if err := binary.Read(r.Reader, binary.LittleEndian, &out); err != nil {
+	if err := binary.Read(d.Reader, binary.LittleEndian, &out); err != nil {
 		return 0, err
 	}
 
 	return math.Float32frombits(out), nil
 }
 
-func (r *Decoder) DecodeFloat64() (float64, error) {
+func (d *Decoder) DecodeFloat64() (float64, error) {
 	var out uint64
-	if err := binary.Read(r.Reader, binary.LittleEndian, &out); err != nil {
+	if err := binary.Read(d.Reader, binary.LittleEndian, &out); err != nil {
 		return 0, err
 	}
 
@@ -82,16 +82,26 @@ func (d *Decoder) DecodeModule() (*Module, error) {
 		}
 		prevSectionID = sectionID
 
+		sectionLen, err := d.DecodeUvarint32()
+		if err != nil {
+			return nil, fmt.Errorf("decode section byte count: %w", err)
+		}
+		ell := d.Len()
+
 		if err := d.decodeNonCustomSectionIntoModule(sectionID, out); err != nil {
 			return nil, fmt.Errorf("bad section(%d): %w", sectionID, err)
+		}
+
+		if d.Len()+int(sectionLen) != ell {
+			return nil, fmt.Errorf("section(%d) size mismatch: %w", sectionID, err)
 		}
 	}
 
 	return out, nil
 }
 
-func (r *Decoder) DecodeName() (string, error) {
-	buf, err := r.DecodeBytes()
+func (d *Decoder) DecodeName() (string, error) {
+	buf, err := d.DecodeBytes()
 	if err != nil {
 		return "", err
 	}
@@ -99,27 +109,27 @@ func (r *Decoder) DecodeName() (string, error) {
 	return string(buf), nil
 }
 
-func (r *Decoder) DecodeUint32() (uint32, error) {
+func (d *Decoder) DecodeUint32() (uint32, error) {
 	var out uint32
-	if err := binary.Read(r.Reader, binary.LittleEndian, &out); err != nil {
+	if err := binary.Read(d.Reader, binary.LittleEndian, &out); err != nil {
 		return 0, err
 	}
 
 	return out, nil
 }
 
-func (r *Decoder) DecodeUvarint32() (uint32, error) {
-	out, err := localBinaryPkg.ReadUvarint(r.Reader, localBinaryPkg.BitsLen32)
+func (d *Decoder) DecodeUvarint32() (uint32, error) {
+	out, err := localBinaryPkg.ReadUvarint(d.Reader, localBinaryPkg.BitsLen32)
 	return uint32(out), err
 }
 
-func (r *Decoder) DecodeVarint32() (int32, error) {
-	out, err := localBinaryPkg.ReadVarint(r.Reader, localBinaryPkg.BitsLen32)
+func (d *Decoder) DecodeVarint32() (int32, error) {
+	out, err := localBinaryPkg.ReadVarint(d.Reader, localBinaryPkg.BitsLen32)
 	return int32(out), err
 }
 
-func (r *Decoder) DecodeVarint64() (int64, error) {
-	out, err := localBinaryPkg.ReadVarint(r.Reader, localBinaryPkg.BitsLen64)
+func (d *Decoder) DecodeVarint64() (int64, error) {
+	out, err := localBinaryPkg.ReadVarint(d.Reader, localBinaryPkg.BitsLen64)
 	return int64(out), err
 }
 

@@ -1,6 +1,11 @@
 package wasmer
 
-import "github.com/sammyne/mastering-wasm/mini-wasmer/types"
+import (
+	"fmt"
+	"os"
+
+	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
+)
 
 type Module struct {
 	Magic     uint32
@@ -13,8 +18,17 @@ type Module struct {
 	Memories  []types.Memory
 	Globals   []types.Global
 	Exports   []types.Export
-	Start     types.FuncIdx // math.MaxUint32 means no start
+	Start     *types.FuncIdx
 	Elements  []types.Element
 	Codes     []types.Code
 	Data      []types.Data
+}
+
+func DecodeModuleFromFile(filename string) (*Module, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+
+	return NewDecoder(data).DecodeModule()
 }

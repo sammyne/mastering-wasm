@@ -165,10 +165,10 @@ func (d *Decoder) decodeExportDescription() (*types.ExportDescription, error) {
 	switch tag {
 	case types.PortTagFunc, types.PortTagTable, types.PortTagMemory, types.PortTagGlobal:
 	default:
-		return nil, fmt.Errorf("invalid tag: %v", tag)
+		return nil, fmt.Errorf("invalid tag: %02x", tag)
 	}
 
-	idx, err := d.DecodeUint32()
+	idx, err := d.DecodeUvarint32()
 	if err != nil {
 		return nil, fmt.Errorf("decode uint32: %w", err)
 	}
@@ -450,9 +450,10 @@ func (d *Decoder) decodeNonCustomSectionIntoModule(ID byte, m *Module) error {
 	case types.SectionIDExport:
 		m.Exports, err = d.decodeExports()
 	case types.SectionIDStart:
-		m.Start, err = d.decodeStart()
-		if err != nil {
-			m.Start = math.MaxUint32
+		var idx uint32
+		idx, err = d.decodeStart()
+		if err == nil {
+			m.Start = &idx
 		}
 	case types.SectionIDElement:
 		m.Elements, err = d.decodeElements()
@@ -536,7 +537,7 @@ func (d *Decoder) decodeValueType() (types.ValueType, error) {
 	switch t {
 	case types.ValueTypeI32, types.ValueTypeI64, types.ValueTypeF32, types.ValueTypeF64:
 	default:
-		return types.ValueTypeUnknown, fmt.Errorf("invalid type: %d", t)
+		return types.ValueTypeUnknown, fmt.Errorf("invalid type: %02x-%02x", t, types.ValueTypeI32)
 	}
 
 	return t, nil
@@ -545,13 +546,13 @@ func (d *Decoder) decodeValueType() (types.ValueType, error) {
 func (d *Decoder) decodeValueTypes() ([]types.ValueType, error) {
 	n, err := d.DecodeUvarint32()
 	if err != nil {
-		return nil, fmt.Errorf("decode #(table): %w", err)
+		return nil, fmt.Errorf("decode #(value types): %w", err)
 	}
 
 	out := make([]types.ValueType, n)
 	for i := range out {
 		if out[i], err = d.decodeValueType(); err != nil {
-			return nil, fmt.Errorf("decode %d-th table: %w", i, err)
+			return nil, fmt.Errorf("decode %d-th value types: %w", i, err)
 		}
 	}
 

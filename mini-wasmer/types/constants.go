@@ -40,8 +40,24 @@ type ValueType = byte
 
 const (
 	ValueTypeUnknown ValueType = 0
-	ValueTypeI32     ValueType = 0x7F - iota
+	ValueTypeI32     ValueType = 0x80 - iota
 	ValueTypeI64
 	ValueTypeF32
 	ValueTypeF64
 )
+
+func StringifyValueType(t ValueType) string {
+	switch t {
+	case ValueTypeI32:
+		return "i32"
+	case ValueTypeI64:
+		return "i64"
+	case ValueTypeF32:
+		return "f32"
+	case ValueTypeF64:
+		return "f64"
+	default:
+	}
+
+	return "unknown"
+}
