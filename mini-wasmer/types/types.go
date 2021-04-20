@@ -27,9 +27,9 @@ type Data struct {
 }
 
 type Element struct {
-	Table  TableIdx
-	Offset Expr
-	Init   []FuncIdx
+	TableIdx TableIdx
+	Offset   Expr
+	Init     []FuncIdx
 }
 
 type Export struct {
@@ -90,4 +90,13 @@ type Memory = Limits
 type Table struct {
 	ElementType byte
 	Limits      Limits
+}
+
+func (c *Code) LocalCount() uint64 {
+	var n uint64
+	for _, v := range c.Locals {
+		n += uint64(v.N)
+	}
+
+	return n
 }

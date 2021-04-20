@@ -69,7 +69,7 @@ func (d *Decoder) DecodeModule() (*Module, error) {
 		}
 
 		if sectionID == types.SectionIDCustom {
-			s, err := d.decodeCustomSection()
+			s, err := d.decodeCustom()
 			if err != nil {
 				return nil, fmt.Errorf("decode custom section: %w", err)
 			}

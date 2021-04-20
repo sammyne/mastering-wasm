@@ -39,7 +39,8 @@ const (
 type ValueType = byte
 
 const (
-	ValueTypeI32 ValueType = 0x7F - iota
+	ValueTypeUnknown ValueType = 0
+	ValueTypeI32     ValueType = 0x7F - iota
 	ValueTypeI64
 	ValueTypeF32
 	ValueTypeF64
