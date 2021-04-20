@@ -69,11 +69,11 @@ func (d *Decoder) DecodeModule() (*Module, error) {
 		}
 
 		if sectionID == types.SectionIDCustom {
-			s, err := d.decodeCustom()
-			if err != nil {
+			var c types.Custom
+			if err := d.decodeCustom(&c); err != nil {
 				return nil, fmt.Errorf("decode custom section: %w", err)
 			}
-			out.Customs = append(out.Customs, *s)
+			out.Customs = append(out.Customs, c)
 			continue
 		}
 

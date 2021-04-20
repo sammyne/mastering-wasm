@@ -7,25 +7,23 @@ import (
 	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
 )
 
-func (d *Decoder) decodeCode() (*types.Code, error) {
+func (d *Decoder) decodeCode(out *types.Code) error {
 	data, err := d.DecodeBytes()
 	if err != nil {
-		return nil, fmt.Errorf("decode data: %w", err)
+		return fmt.Errorf("decode data: %w", err)
 	}
 
-	dd := NewDecoder(data)
-
-	locals, err := dd.decodeLocalsVec()
+	locals, err := NewDecoder(data).decodeLocalsVec()
 	if err != nil {
-		return nil, fmt.Errorf("decode locals vec: %w", err)
+		return fmt.Errorf("decode locals vec: %w", err)
 	}
 
-	out := &types.Code{Locals: locals}
+	out.Locals = locals
 	if n := out.LocalCount(); n >= math.MaxUint32 {
-		return nil, fmt.Errorf("too many locals: %d", n)
+		return fmt.Errorf("too many locals: %d", n)
 	}
 
-	return out, nil
+	return nil
 }
 
 func (d *Decoder) decodeCodes() ([]types.Code, error) {
@@ -36,33 +34,31 @@ func (d *Decoder) decodeCodes() ([]types.Code, error) {
 
 	out := make([]types.Code, n)
 	for i := range out {
-		c, err := d.decodeCode()
-		if err != nil {
+		if err := d.decodeCode(&out[i]); err != nil {
 			return nil, fmt.Errorf("%d-th code: %w", i, err)
 		}
-		out[i] = *c
 	}
 
 	return out, nil
 }
 
-func (d *Decoder) decodeCustom() (*types.Custom, error) {
+func (d *Decoder) decodeCustom(out *types.Custom) error {
 	buf, err := d.DecodeBytes()
 	if err != nil {
-		return nil, fmt.Errorf("decode bytes: %w", err)
+		return fmt.Errorf("decode bytes: %w", err)
 	}
 
 	dd := NewDecoder(buf)
 	name, err := dd.DecodeName()
 	if err != nil {
-		return nil, fmt.Errorf("decode name: %w", err)
+		return fmt.Errorf("decode name: %w", err)
 	}
 
 	data := make([]byte, dd.Len())
 	_, _ = dd.Read(data)
 
-	out := &types.Custom{Name: name, Bytes: data}
-	return out, nil
+	out.Name, out.Bytes = name, data
+	return nil
 }
 
 func (d *Decoder) decodeData() ([]types.Data, error) {
@@ -73,54 +69,52 @@ func (d *Decoder) decodeData() ([]types.Data, error) {
 
 	out := make([]types.Data, n)
 	for i := range out {
-		v, err := d.decodeDatum()
-		if err != nil {
+		if err := d.decodeDatum(&out[i]); err != nil {
 			return nil, fmt.Errorf("%d-th datum: %w", i, err)
 		}
-		out[i] = *v
 	}
 
 	return out, nil
 }
 
-func (d *Decoder) decodeDatum() (*types.Data, error) {
+func (d *Decoder) decodeDatum(out *types.Data) error {
 	memoryIdx, err := d.DecodeUvarint32()
 	if err != nil {
-		return nil, fmt.Errorf("decode memory idx: %w", err)
+		return fmt.Errorf("decode memory idx: %w", err)
 	}
 
-	offset, err := d.decodeExpr()
-	if err != nil {
-		return nil, fmt.Errorf("decode expr: %w", err)
+	var offset types.Expr
+	if err := d.decodeExpr(&offset); err != nil {
+		return fmt.Errorf("decode expr: %w", err)
 	}
 
 	init, err := d.DecodeBytes()
 	if err != nil {
-		return nil, fmt.Errorf("decode init: %w", err)
+		return fmt.Errorf("decode init: %w", err)
 	}
 
-	out := &types.Data{MemoryIdx: memoryIdx, Offset: offset, Init: init}
-	return out, nil
+	out.MemoryIdx, out.Offset, out.Init = memoryIdx, offset, init
+	return nil
 }
 
-func (d *Decoder) decodeElement() (*types.Element, error) {
+func (d *Decoder) decodeElement(out *types.Element) error {
 	tableIdx, err := d.DecodeUint32()
 	if err != nil {
-		return nil, fmt.Errorf("decode table index: %w", err)
+		return fmt.Errorf("decode table index: %w", err)
 	}
 
-	offset, err := d.decodeExpr()
-	if err != nil {
-		return nil, fmt.Errorf("decode expr: %w", err)
+	var offset types.Expr
+	if err := d.decodeExpr(&offset); err != nil {
+		return fmt.Errorf("decode expr: %w", err)
 	}
 
 	init, err := d.decodeIndices()
 	if err != nil {
-		return nil, fmt.Errorf("decode indices: %w", err)
+		return fmt.Errorf("decode indices: %w", err)
 	}
 
-	out := &types.Element{TableIdx: tableIdx, Offset: offset, Init: init}
-	return out, nil
+	out.TableIdx, out.Offset, out.Init = tableIdx, offset, init
+	return nil
 }
 
 func (d *Decoder) decodeElements() ([]types.Element, error) {
@@ -131,29 +125,27 @@ func (d *Decoder) decodeElements() ([]types.Element, error) {
 
 	out := make([]types.Element, n)
 	for i := range out {
-		v, err := d.decodeElement()
-		if err != nil {
+		if err := d.decodeElement(&out[i]); err != nil {
 			return nil, fmt.Errorf("%d-th element: %w", i, err)
 		}
-		out[i] = *v
 	}
 
 	return out, nil
 }
 
-func (d *Decoder) decodeExport() (*types.Export, error) {
+func (d *Decoder) decodeExport(out *types.Export) error {
 	name, err := d.DecodeName()
 	if err != nil {
-		return nil, fmt.Errorf("decode name: %w", err)
+		return fmt.Errorf("decode name: %w", err)
 	}
 
 	description, err := d.decodeExportDescription()
 	if err != nil {
-		return nil, fmt.Errorf("decode export description: %w", err)
+		return fmt.Errorf("decode export description: %w", err)
 	}
 
-	out := &types.Export{Name: name, Description: *description}
-	return out, nil
+	out.Name, out.Description = name, *description
+	return nil
 }
 
 func (d *Decoder) decodeExportDescription() (*types.ExportDescription, error) {
@@ -185,27 +177,25 @@ func (d *Decoder) decodeExports() ([]types.Export, error) {
 
 	out := make([]types.Export, n)
 	for i := range out {
-		v, err := d.decodeExport()
-		if err != nil {
+		if err := d.decodeExport(&out[i]); err != nil {
 			return nil, fmt.Errorf("%d-th export: %w", i, err)
 		}
-		out[i] = *v
 	}
 
 	return out, nil
 }
 
-func (d *Decoder) decodeExpr() (*types.Expr, error) {
+func (d *Decoder) decodeExpr(_ *types.Expr) error {
 	var b byte
 	var err error
 	for b != 0x0B {
 		b, err = d.ReadByte()
 		if err != nil {
-			return nil, fmt.Errorf("read byte: %w", err)
+			return fmt.Errorf("read byte: %w", err)
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (d *Decoder) decodeFuncType() (*types.FuncType, error) {
@@ -228,24 +218,24 @@ func (d *Decoder) decodeFuncType() (*types.FuncType, error) {
 	return out, nil
 }
 
-func (d *Decoder) decodeGlobalType() (*types.GlobalType, error) {
+func (d *Decoder) decodeGlobalType(out *types.GlobalType) error {
 	valueType, err := d.decodeValueType()
 	if err != nil {
-		return nil, fmt.Errorf("decode value type: %w", err)
+		return fmt.Errorf("decode value type: %w", err)
 	}
 
 	mutable, err := d.ReadByte()
 	if err != nil {
-		return nil, fmt.Errorf("read mut: %w", err)
+		return fmt.Errorf("read mut: %w", err)
 	}
 	switch mutable {
 	case types.MutConst, types.MutVar:
 	default:
-		return nil, fmt.Errorf("bad mutability: %d", mutable)
+		return fmt.Errorf("bad mutability: %d", mutable)
 	}
 
-	out := &types.GlobalType{ValueType: valueType, Mutable: mutable}
-	return out, nil
+	out.ValueType, out.Mutable = valueType, mutable
+	return nil
 }
 
 func (d *Decoder) decodeGlobals() ([]types.Global, error) {
@@ -256,40 +246,36 @@ func (d *Decoder) decodeGlobals() ([]types.Global, error) {
 
 	out := make([]types.Global, n)
 	for i := range out {
-		t, err := d.decodeGlobalType()
-		if err != nil {
+		if err := d.decodeGlobalType(&out[i].Type); err != nil {
 			return nil, fmt.Errorf("decode %d-th global's type: %w", i, err)
 		}
 
-		init, err := d.decodeExpr()
-		if err != nil {
+		if err := d.decodeExpr(&out[i].Init); err != nil {
 			return nil, fmt.Errorf("decode %d-th global's init: %w", i, err)
 		}
-
-		out[i] = types.Global{Type: *t, Init: init}
 	}
 
 	return out, nil
 }
 
-func (d *Decoder) decodeImport() (*types.Import, error) {
+func (d *Decoder) decodeImport(out *types.Import) error {
 	module, err := d.DecodeName()
 	if err != nil {
-		return nil, fmt.Errorf("decode module name: %w", err)
+		return fmt.Errorf("decode module name: %w", err)
 	}
 
 	name, err := d.DecodeName()
 	if err != nil {
-		return nil, fmt.Errorf("decode name: %w", err)
+		return fmt.Errorf("decode name: %w", err)
 	}
 
 	description, err := d.decodeImportDescription()
 	if err != nil {
-		return nil, fmt.Errorf("decode description: %w", err)
+		return fmt.Errorf("decode description: %w", err)
 	}
 
-	out := &types.Import{Module: module, Name: name, Description: *description}
-	return out, nil
+	out.Module, out.Name, out.Description = module, name, *description
+	return nil
 }
 
 func (d *Decoder) decodeImportDescription() (*types.ImportDescription, error) {
@@ -305,17 +291,9 @@ func (d *Decoder) decodeImportDescription() (*types.ImportDescription, error) {
 	case types.PortTagTable:
 		err = d.decodeTable(&out.Table)
 	case types.PortTagMemory:
-		var v *types.Memory
-		v, err = d.decodeLimits()
-		if err == nil {
-			out.Memory = *v
-		}
+		err = d.decodeLimits(&out.Memory)
 	case types.PortTagGlobal:
-		var v *types.GlobalType
-		v, err = d.decodeGlobalType()
-		if err == nil {
-			out.Global = *v
-		}
+		err = d.decodeGlobalType(&out.Global)
 	default:
 		return nil, fmt.Errorf("bad tag: %d", tag)
 	}
@@ -331,11 +309,9 @@ func (d *Decoder) decodeImports() ([]types.Import, error) {
 
 	out := make([]types.Import, n)
 	for i := range out {
-		v, err := d.decodeImport()
-		if err != nil {
+		if err := d.decodeImport(&out[i]); err != nil {
 			return nil, fmt.Errorf("%d-th import: %w", i, err)
 		}
-		out[i] = *v
 	}
 
 	return out, nil
@@ -358,41 +334,41 @@ func (d *Decoder) decodeIndices() ([]uint32, error) {
 	return out, nil
 }
 
-func (d *Decoder) decodeLimits() (*types.Limits, error) {
+func (d *Decoder) decodeLimits(out *types.Limits) error {
 	tag, err := d.ReadByte()
 	if err != nil {
-		return nil, fmt.Errorf("decode tag: %w", err)
+		return fmt.Errorf("decode tag: %w", err)
 	}
 
 	min, err := d.DecodeUvarint32()
 	if err != nil {
-		return nil, fmt.Errorf("decode min: %w", err)
+		return fmt.Errorf("decode min: %w", err)
 	}
 
 	var max uint32
 	if tag == 1 {
 		if max, err = d.DecodeUvarint32(); err != nil {
-			return nil, fmt.Errorf("decode max: %w", err)
+			return fmt.Errorf("decode max: %w", err)
 		}
 	}
 
-	out := &types.Limits{Tag: tag, Min: min, Max: max}
-	return out, nil
+	out.Tag, out.Min, out.Max = tag, min, max
+	return nil
 }
 
-func (d *Decoder) decodeLocals() (*types.Locals, error) {
+func (d *Decoder) decodeLocals(out *types.Locals) error {
 	n, err := d.DecodeUvarint32()
 	if err != nil {
-		return nil, fmt.Errorf("decode N: %w", err)
+		return fmt.Errorf("decode N: %w", err)
 	}
 
 	_type, err := d.decodeValueType()
 	if err != nil {
-		return nil, fmt.Errorf("decode value type: %w", err)
+		return fmt.Errorf("decode value type: %w", err)
 	}
 
-	out := &types.Locals{N: n, Type: _type}
-	return out, nil
+	out.N, out.Type = n, _type
+	return nil
 }
 
 func (d *Decoder) decodeLocalsVec() ([]types.Locals, error) {
@@ -403,11 +379,9 @@ func (d *Decoder) decodeLocalsVec() ([]types.Locals, error) {
 
 	out := make([]types.Locals, n)
 	for i := range out {
-		v, err := d.decodeLocals()
-		if err != nil {
+		if err := d.decodeLocals(&out[i]); err != nil {
 			return nil, fmt.Errorf("decode %d-th locals: %w", i, err)
 		}
-		out[i] = *v
 	}
 
 	return out, nil
@@ -421,11 +395,9 @@ func (d *Decoder) decodeMemories() ([]types.Memory, error) {
 
 	out := make([]types.Memory, n)
 	for i := range out {
-		v, err := d.decodeLimits()
-		if err != nil {
+		if err := d.decodeLimits(&out[i]); err != nil {
 			return nil, fmt.Errorf("decode %d-th limits: %w", i, err)
 		}
-		out[i] = *v
 	}
 
 	return out, nil
@@ -485,12 +457,12 @@ func (d *Decoder) decodeTable(t *types.Table) error {
 		return fmt.Errorf("invalid element type: expect %d, got %d", types.FuncRef, elemType)
 	}
 
-	limits, err := d.decodeLimits()
-	if err != nil {
+	var limits types.Limits
+	if err := d.decodeLimits(&limits); err != nil {
 		return fmt.Errorf("decode limits: %w", err)
 	}
 
-	t.ElementType, t.Limits = elemType, *limits
+	t.ElementType, t.Limits = elemType, limits
 	return nil
 }
 
