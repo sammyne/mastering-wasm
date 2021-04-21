@@ -1,28 +1,173 @@
 package wasmer
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
+	"github.com/sammyne/mastering-wasm/mini-wasmer/tools"
 	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
 )
 
+func (d *Decoder) decodeArgs(opcode byte) (interface{}, error) {
+	var out interface{}
+	var err error
+
+	switch opcode {
+	case types.OpcodeBlock, types.OpcodeLoop:
+		out, err = d.decodeBlock()
+	case types.OpcodeIf:
+		out, err = d.decodeBlockIf()
+	case types.OpcodeBr, types.OpcodeBrIf:
+		out, err = d.DecodeUvarint32()
+	case types.OpcodeBrTable:
+		out, err = d.decodeBreakTable()
+	case types.OpcodeCall:
+		out, err = d.DecodeUvarint32()
+	case types.OpcodeCallIndirect:
+		out, err = d.decodeCallIndirectArgs()
+	case types.OpcodeLocalGet, types.OpcodeLocalSet, types.OpcodeLocalTee:
+		out, err = d.DecodeUvarint32()
+	case types.OpcodeGlobalGet, types.OpcodeGlobalSet:
+		out, err = d.DecodeUvarint32()
+	case types.OpcodeMemorySize, types.OpcodeMemoryGrow:
+		out, err = 0, d.decodeZero()
+	case types.OpcodeI32Const:
+		out, err = d.DecodeVarint32()
+	case types.OpcodeI64Const:
+		out, err = d.DecodeVarint64()
+	case types.OpcodeF32Const:
+		out, err = d.DecodeFloat32()
+	case types.OpcodeF64Const:
+		out, err = d.DecodeFloat64()
+	case types.OpcodeTruncSat:
+		out, err = d.ReadByte()
+	default:
+		if opcode >= types.OpcodeI32Load && opcode <= types.OpcodeI64Store32 {
+			out, err = d.decodeMemoryArg()
+		}
+	}
+
+	return out, err
+}
+
+func (d *Decoder) decodeBlock() (*types.Block, error) {
+	blockType, err := d.decodeBlockType()
+	if err != nil {
+		return nil, fmt.Errorf("decode block type: %w", err)
+	}
+
+	instructions, endOpcode, err := d.decodeInstructions()
+	if err != nil {
+		return nil, fmt.Errorf("decode instructions: %w", err)
+	} else if endOpcode != types.OpcodeEnd {
+		return nil, fmt.Errorf("invalid end opcode: %v", endOpcode)
+	}
+
+	out := &types.Block{BlockType: blockType, Instructions: instructions}
+	return out, nil
+}
+
+func (d *Decoder) decodeBlockIf() (*types.BlockIf, error) {
+	blockType, err := d.decodeBlockType()
+	if err != nil {
+		return nil, fmt.Errorf("decode block type: %w", err)
+	}
+
+	instructions1, endOpcode, err := d.decodeInstructions()
+	if err != nil {
+		return nil, fmt.Errorf("decode instructions: %w", err)
+	}
+
+	var instructions2 []types.Instruction
+	if endOpcode == types.OpcodeElse {
+		if instructions2, endOpcode, err = d.decodeInstructions(); err != nil {
+			return nil, fmt.Errorf("decode else block: %w", err)
+		} else if endOpcode != types.OpcodeEnd {
+			return nil, fmt.Errorf("invalid end opcode: %v", endOpcode)
+		}
+	}
+
+	out := &types.BlockIf{
+		BlockType:     blockType,
+		Instructions1: instructions1,
+		Instructions2: instructions2,
+	}
+
+	return out, nil
+}
+
+func (d *Decoder) decodeBlockType() (int32, error) {
+	t, err := d.DecodeVarint32()
+	if err != nil {
+		return 0, fmt.Errorf("decode varint32: %w", err)
+	}
+
+	if t < 0 {
+		switch t {
+		case types.BlockTypeI32, types.BlockTypeI64, types.BlockTypeF32, types.BlockTypeF64,
+			types.BlockTypeEmpty:
+		default:
+			return 0, fmt.Errorf("bad block type: %d", t)
+		}
+	}
+
+	return t, nil
+}
+
+func (d *Decoder) decodeBreakTable() (*types.BreakTable, error) {
+	labels, err := d.decodeIndices()
+	if err != nil {
+		return nil, fmt.Errorf("decode indices: %w", err)
+	}
+
+	defaultIdx, err := d.DecodeUvarint32()
+	if err != nil {
+		return nil, fmt.Errorf("decode default: %w", err)
+	}
+
+	out := &types.BreakTable{Labels: labels, Default: defaultIdx}
+	return out, nil
+}
+
+func (d *Decoder) decodeCallIndirectArgs() (uint32, error) {
+	typeIdx, err := d.DecodeUvarint32()
+	if err != nil {
+		return 0, fmt.Errorf("decode type idx: %w", err)
+	}
+
+	if err := d.decodeZero(); err != nil {
+		return 0, fmt.Errorf("decode zero: %w", err)
+	}
+
+	return typeIdx, nil
+}
+
 func (d *Decoder) decodeCode(out *types.Code) error {
-	data, err := d.DecodeBytes()
+	n, err := d.DecodeUvarint32()
 	if err != nil {
-		return fmt.Errorf("decode data: %w", err)
+		return fmt.Errorf("decode byte count: %w", err)
 	}
+	remainingLen := d.Len()
 
-	locals, err := NewDecoder(data).decodeLocalsVec()
+	locals, err := d.decodeLocalsVec()
 	if err != nil {
-		return fmt.Errorf("decode locals vec: %w", err)
+		return fmt.Errorf("decode locals: %w", err)
 	}
-
-	out.Locals = locals
-	if n := out.LocalCount(); n >= math.MaxUint32 {
+	if nLocal := tools.CountLocals(locals); nLocal >= math.MaxUint32 {
 		return fmt.Errorf("too many locals: %d", n)
 	}
 
+	var expr types.Expr
+	if err := d.decodeExpr(&expr); err != nil {
+		return fmt.Errorf("decode expr: %w", err)
+	}
+
+	if d.Len()+int(n) != remainingLen {
+		return errors.New("invalid code length")
+	}
+
+	out.Locals, out.Expr = locals, expr
 	return nil
 }
 
@@ -185,16 +330,17 @@ func (d *Decoder) decodeExports() ([]types.Export, error) {
 	return out, nil
 }
 
-func (d *Decoder) decodeExpr(_ *types.Expr) error {
-	var b byte
-	var err error
-	for b != 0x0B {
-		b, err = d.ReadByte()
-		if err != nil {
-			return fmt.Errorf("read byte: %w", err)
-		}
+func (d *Decoder) decodeExpr(out *types.Expr) error {
+	instructions, opcode, err := d.decodeInstructions()
+	if err != nil {
+		return fmt.Errorf("decode instructions: %w", err)
 	}
 
+	if opcode != types.OpcodeEnd {
+		return fmt.Errorf("invalid opcode: expect %v, got %v", types.OpcodeEnd, opcode)
+	}
+
+	*out = instructions
 	return nil
 }
 
@@ -334,6 +480,40 @@ func (d *Decoder) decodeIndices() ([]uint32, error) {
 	return out, nil
 }
 
+func (d *Decoder) decodeInstruction(out *types.Instruction) error {
+	opcode, err := d.ReadByte()
+	if err != nil {
+		return fmt.Errorf("decode opcode: %w", err)
+	} else if _, ok := types.GetOpname(opcode); !ok {
+		return fmt.Errorf("unknown opcode: %02x", opcode)
+	}
+
+	args, err := d.decodeArgs(opcode)
+	if err != nil {
+		return fmt.Errorf("decode args: %w", err)
+	}
+
+	out.Opcode, out.Args = opcode, args
+	return nil
+}
+
+func (d *Decoder) decodeInstructions() ([]types.Instruction, byte, error) {
+	var out []types.Instruction
+
+	var t types.Instruction
+	for {
+		if err := d.decodeInstruction(&t); err != nil {
+			return nil, 0, fmt.Errorf("decode instruction: %w", err)
+		}
+
+		if t.Opcode == types.OpcodeElse || t.Opcode == types.OpcodeEnd {
+			return out, t.Opcode, nil
+		}
+
+		out = append(out, t)
+	}
+}
+
 func (d *Decoder) decodeLimits(out *types.Limits) error {
 	tag, err := d.ReadByte()
 	if err != nil {
@@ -400,6 +580,21 @@ func (d *Decoder) decodeMemories() ([]types.Memory, error) {
 		}
 	}
 
+	return out, nil
+}
+
+func (d *Decoder) decodeMemoryArg() (types.MemoryArg, error) {
+	align, err := d.DecodeUvarint32()
+	if err != nil {
+		return types.MemoryArg{}, fmt.Errorf("decode align: %w", err)
+	}
+
+	offset, err := d.DecodeUvarint32()
+	if err != nil {
+		return types.MemoryArg{}, fmt.Errorf("decode offset: %w", err)
+	}
+
+	out := types.MemoryArg{Align: align, Offset: offset}
 	return out, nil
 }
 
@@ -529,4 +724,15 @@ func (d *Decoder) decodeValueTypes() ([]types.ValueType, error) {
 	}
 
 	return out, nil
+}
+
+func (d *Decoder) decodeZero() error {
+	v, err := d.ReadByte()
+	if err != nil {
+		return fmt.Errorf("read byte: %w", err)
+	} else if v != 0 {
+		return errors.New("non-zero")
+	}
+
+	return nil
 }

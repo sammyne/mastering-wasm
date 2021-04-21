@@ -7,6 +7,16 @@ const (
 	Version = 0x00000001
 )
 
+type BlockType = int32
+
+const (
+	BlockTypeI32 BlockType = -iota - 1
+	BlockTypeI64
+	BlockTypeF32
+	BlockTypeF64
+	BlockTypeEmpty
+)
+
 const (
 	MutConst byte = 0
 	MutVar   byte = 1

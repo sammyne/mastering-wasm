@@ -47,7 +47,7 @@ type ExportDescription struct {
 	Idx uint32
 }
 
-type Expr interface{}
+type Expr = []Instruction
 
 type FuncType struct {
 	Tag         byte
@@ -95,15 +95,6 @@ type Memory = Limits
 type Table struct {
 	ElementType byte
 	Limits      Limits
-}
-
-func (c *Code) LocalCount() uint64 {
-	var n uint64
-	for _, v := range c.Locals {
-		n += uint64(v.N)
-	}
-
-	return n
 }
 
 func (t FuncType) String() string {
