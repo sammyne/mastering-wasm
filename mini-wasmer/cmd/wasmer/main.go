@@ -6,6 +6,7 @@ import (
 
 	wasmer "github.com/sammyne/mastering-wasm/mini-wasmer"
 	"github.com/sammyne/mastering-wasm/mini-wasmer/cmd/wasmer/tools"
+	"github.com/sammyne/mastering-wasm/mini-wasmer/vm"
 	flag "github.com/spf13/pflag"
 )
 
@@ -27,8 +28,13 @@ func main() {
 
 	if dump {
 		if err := tools.Dump(module); err != nil {
-			panic(fmt.Sprintf("fail to dump module: %v", err))
+			panic(fmt.Sprintf("fail to dump: %v", err))
 		}
+		return
+	}
+
+	if err := vm.Run(module); err != nil {
+		panic(fmt.Sprintf("fail to run: %v", err))
 	}
 }
 
