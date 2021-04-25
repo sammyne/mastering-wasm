@@ -22,6 +22,11 @@ const (
 	MutVar   byte = 1
 )
 
+const (
+	PageSize     = 1 << 16
+	MaxPageCount = 1 << 16
+)
+
 type PortTag = byte
 
 const (

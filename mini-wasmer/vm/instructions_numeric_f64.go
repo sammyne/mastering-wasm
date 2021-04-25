@@ -159,6 +159,10 @@ func F64Le(vm *VM, _ interface{}) error {
 	return nil
 }
 
+func F64Load(vm *VM, arg interface{}) error {
+	return I64Load(vm, arg)
+}
+
 func F64Lt(vm *VM, _ interface{}) error {
 	v1, v2, err := vm.popTowFloat64()
 	if err != nil {
@@ -247,6 +251,10 @@ func F64Sqrt(vm *VM, _ interface{}) error {
 
 	vm.PushFloat64(math.Sqrt(v))
 	return nil
+}
+
+func F64Store(vm *VM, arg interface{}) error {
+	return I64Store(vm, arg)
 }
 
 func F64Sub(vm *VM, _ interface{}) error {

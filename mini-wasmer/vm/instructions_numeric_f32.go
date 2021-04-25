@@ -149,6 +149,10 @@ func F32Gt(vm *VM, _ interface{}) error {
 	return nil
 }
 
+func F32Load(vm *VM, arg interface{}) error {
+	return I32Load(vm, arg)
+}
+
 func F32Ne(vm *VM, _ interface{}) error {
 	v1, v2, err := vm.popTowFloat32()
 	if err != nil {
@@ -247,6 +251,10 @@ func F32Sqrt(vm *VM, _ interface{}) error {
 
 	vm.PushFloat32(float32(math.Sqrt(float64(v))))
 	return nil
+}
+
+func F32Store(vm *VM, arg interface{}) error {
+	return I32Store(vm, arg)
 }
 
 func F32Sub(vm *VM, _ interface{}) error {

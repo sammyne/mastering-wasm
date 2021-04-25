@@ -236,6 +236,76 @@ func I64LeU(vm *VM, _ interface{}) error {
 	return nil
 }
 
+func I64Load(vm *VM, arg interface{}) error {
+	v, err := readUint64(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint64: %w", err)
+	}
+
+	vm.PushUint64(v)
+	return nil
+}
+
+func I64Load16S(vm *VM, arg interface{}) error {
+	v, err := readUint16(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint16: %w", err)
+	}
+
+	vm.PushInt64(int64(int16(v)))
+	return nil
+}
+
+func I64Load16U(vm *VM, arg interface{}) error {
+	v, err := readUint16(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint16: %w", err)
+	}
+
+	vm.PushUint64(uint64(v))
+	return nil
+}
+
+func I64Load32S(vm *VM, arg interface{}) error {
+	v, err := readUint32(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint32: %w", err)
+	}
+
+	vm.PushInt64(int64(int32(v)))
+	return nil
+}
+
+func I64Load32U(vm *VM, arg interface{}) error {
+	v, err := readUint32(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint32: %w", err)
+	}
+
+	vm.PushUint64(uint64(v))
+	return nil
+}
+
+func I64Load8S(vm *VM, arg interface{}) error {
+	v, err := readUint8(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint8: %w", err)
+	}
+
+	vm.PushInt64(int64(int8(v)))
+	return nil
+}
+
+func I64Load8U(vm *VM, arg interface{}) error {
+	v, err := readUint8(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint8: %w", err)
+	}
+
+	vm.PushUint64(uint64(v))
+	return nil
+}
+
 func I64LtS(vm *VM, _ interface{}) error {
 	v2, ok := vm.PopInt64()
 	if !ok {
@@ -389,6 +459,42 @@ func I64ShrU(vm *VM, _ interface{}) error {
 
 	vm.PushUint64(v1 >> (v2 % 64))
 	return nil
+}
+
+func I64Store(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint64()
+	if !ok {
+		return fmt.Errorf("pop uint64: %w", ErrOperandPop)
+	}
+
+	return writeUint64(vm, arg, v)
+}
+
+func I64Store16(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint64()
+	if !ok {
+		return fmt.Errorf("pop uint64: %w", ErrOperandPop)
+	}
+
+	return writeUint16(vm, arg, uint16(v))
+}
+
+func I64Store32(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint64()
+	if !ok {
+		return fmt.Errorf("pop uint64: %w", ErrOperandPop)
+	}
+
+	return writeUint32(vm, arg, uint32(v))
+}
+
+func I64Store8(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint64()
+	if !ok {
+		return fmt.Errorf("pop uint64: %w", ErrOperandPop)
+	}
+
+	return writeUint8(vm, arg, byte(v))
 }
 
 func I64Sub(vm *VM, _ interface{}) error {

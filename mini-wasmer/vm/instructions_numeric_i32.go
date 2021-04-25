@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"math"
 	"math/bits"
 )
@@ -170,6 +171,56 @@ func I32LeU(vm *VM, _ interface{}) error {
 	return nil
 }
 
+func I32Load(vm *VM, arg interface{}) error {
+	v, err := readUint32(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint32: %w", err)
+	}
+
+	vm.PushUint32(v)
+	return nil
+}
+
+func I32Load16S(vm *VM, arg interface{}) error {
+	v, err := readUint16(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint16: %w", err)
+	}
+
+	vm.PushInt32(int32(int16(v)))
+	return nil
+}
+
+func I32Load16U(vm *VM, arg interface{}) error {
+	v, err := readUint16(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint16: %w", err)
+	}
+
+	vm.PushUint32(uint32(v))
+	return nil
+}
+
+func I32Load8S(vm *VM, arg interface{}) error {
+	v, err := readUint8(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint8: %w", err)
+	}
+
+	vm.PushInt32(int32(int8(v)))
+	return nil
+}
+
+func I32Load8U(vm *VM, arg interface{}) error {
+	v, err := readUint8(vm, arg)
+	if err != nil {
+		return fmt.Errorf("read uint8: %w", err)
+	}
+
+	vm.PushUint32(uint32(v))
+	return nil
+}
+
 func I32LtS(vm *VM, _ interface{}) error {
 	v1, v2, err := vm.popTowInt32()
 	if err != nil {
@@ -298,6 +349,33 @@ func I32ShrU(vm *VM, _ interface{}) error {
 
 	vm.PushUint32(v1 >> (v2 % 32))
 	return nil
+}
+
+func I32Store(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint32()
+	if !ok {
+		return fmt.Errorf("pop uint32: %w", ErrOperandPop)
+	}
+
+	return writeUint32(vm, arg, v)
+}
+
+func I32Store16(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint32()
+	if !ok {
+		return fmt.Errorf("pop uint32: %w", ErrOperandPop)
+	}
+
+	return writeUint16(vm, arg, uint16(v))
+}
+
+func I32Store8(vm *VM, arg interface{}) error {
+	v, ok := vm.PopUint32()
+	if !ok {
+		return fmt.Errorf("pop uint32: %w", ErrOperandPop)
+	}
+
+	return writeUint8(vm, arg, byte(v))
 }
 
 func I32Sub(vm *VM, _ interface{}) error {

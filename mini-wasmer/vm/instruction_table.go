@@ -7,6 +7,33 @@ type RunInstructionFunc = func(vm *VM, args interface{}) error
 var instructionTable [256]RunInstructionFunc
 
 func init() {
+	instructionTable[types.OpcodeI32Load] = I32Load
+	instructionTable[types.OpcodeI64Load] = I64Load
+	instructionTable[types.OpcodeF32Load] = F32Load
+	instructionTable[types.OpcodeF64Load] = F64Load
+	instructionTable[types.OpcodeI32Load8S] = I32Load8S
+	instructionTable[types.OpcodeI32Load8U] = I32Load8U
+	instructionTable[types.OpcodeI32Load16S] = I32Load16S
+	instructionTable[types.OpcodeI32Load16U] = I32Load16U
+	instructionTable[types.OpcodeI64Load8S] = I64Load8S
+	instructionTable[types.OpcodeI64Load8U] = I64Load8U
+	instructionTable[types.OpcodeI64Load16S] = I64Load16S
+	instructionTable[types.OpcodeI64Load16U] = I64Load16U
+	instructionTable[types.OpcodeI64Load32S] = I64Load32S
+	instructionTable[types.OpcodeI64Load32U] = I64Load32U
+	instructionTable[types.OpcodeI32Store] = I32Store
+	instructionTable[types.OpcodeI64Store] = I64Store
+	instructionTable[types.OpcodeF32Store] = F32Store
+	instructionTable[types.OpcodeF64Store] = F64Store
+	instructionTable[types.OpcodeI32Store8] = I32Store8
+	instructionTable[types.OpcodeI32Store16] = I32Store16
+	instructionTable[types.OpcodeI64Store8] = I64Store8
+	instructionTable[types.OpcodeI64Store16] = I64Store16
+	instructionTable[types.OpcodeI64Store32] = I64Store32
+	instructionTable[types.OpcodeMemorySize] = MemorySize
+	instructionTable[types.OpcodeMemoryGrow] = MemoryGrow
+
+	// @TODO: sort
 	instructionTable[types.OpcodeCall] = Call // hack!
 	instructionTable[types.OpcodeDrop] = Drop
 	instructionTable[types.OpcodeSelect] = Select
