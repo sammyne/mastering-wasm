@@ -7,7 +7,15 @@ type RunInstructionFunc = func(vm *VM, args interface{}) error
 var instructionTable [256]RunInstructionFunc
 
 func init() {
+	instructionTable[types.OpcodeUnreachable] = Unreachable
+	instructionTable[types.OpcodeNop] = Nop
+	instructionTable[types.OpcodeBlock] = Block
+	instructionTable[types.OpcodeLoop] = Loop
+	instructionTable[types.OpcodeIf] = BlockIf
+	instructionTable[types.OpcodeBr] = Break
 	instructionTable[types.OpcodeBrIf] = BreakIf
+	instructionTable[types.OpcodeBrTable] = BreakTable
+	instructionTable[types.OpcodeReturn] = Return
 	instructionTable[types.OpcodeLocalGet] = LocalGet
 	instructionTable[types.OpcodeLocalSet] = LocalSet
 	instructionTable[types.OpcodeLocalTee] = LocalTee

@@ -29,6 +29,7 @@ func (s *OperandStack) mustPopFloat64() float64 {
 	return math.Float64frombits(v)
 }
 
+/*
 func (s *OperandStack) mustPopInt32() int32 {
 	v, ok := s.PopUint32()
 	if !ok {
@@ -45,6 +46,7 @@ func (s *OperandStack) mustPopInt64() int64 {
 	}
 	return int64(v)
 }
+*/
 
 func (s *OperandStack) mustPopUint32() uint32 {
 	v, ok := s.PopUint64()

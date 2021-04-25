@@ -200,3 +200,18 @@ func (vm *VM) popTowUint64() (uint64, uint64, error) {
 
 	return v1, v2, nil
 }
+
+func (vm *VM) resetBlock(f *ControlFrame) error {
+	results, ok := vm.OperandStack.PopUint64s(len(f.BlockType.ParamTypes))
+	if !ok {
+		return fmt.Errorf("pop result: %w", ErrOperandPop)
+	}
+
+	if _, ok := vm.OperandStack.PopUint64s(vm.OperandStack.Len() - f.BP); !ok {
+		return fmt.Errorf("clean up call control stack: %w", ErrOperandPop)
+	}
+
+	vm.OperandStack.PushUint64s(results...)
+
+	return nil
+}

@@ -14,7 +14,7 @@ const (
 	BlockTypeI64
 	BlockTypeF32
 	BlockTypeF64
-	BlockTypeEmpty
+	BlockTypeEmpty BlockType = -64
 )
 
 const (

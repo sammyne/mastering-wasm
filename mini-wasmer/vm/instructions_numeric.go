@@ -2,10 +2,6 @@ package vm
 
 import "math"
 
-func Nop(vm *VM, _ interface{}) error {
-	return nil
-}
-
 func TruncSat(vm *VM, subOpcode interface{}) error {
 	if vm.OperandStack.Len() == 0 {
 		return ErrOperandPop
