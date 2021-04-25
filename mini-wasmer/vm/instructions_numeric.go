@@ -7,7 +7,7 @@ func Nop(vm *VM, _ interface{}) error {
 }
 
 func TruncSat(vm *VM, subOpcode interface{}) error {
-	if vm.Len() == 0 {
+	if vm.OperandStack.Len() == 0 {
 		return ErrOperandPop
 	}
 

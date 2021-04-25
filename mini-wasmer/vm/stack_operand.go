@@ -6,6 +6,14 @@ type OperandStack struct {
 	slots []uint64
 }
 
+func (s *OperandStack) Get(idx uint32) (uint64, bool) {
+	if idx >= uint32(len(s.slots)) {
+		return 0, false
+	}
+
+	return s.slots[idx], true
+}
+
 func (s *OperandStack) Len() int {
 	return len(s.slots)
 }
@@ -51,6 +59,18 @@ func (s *OperandStack) PopUint64() (uint64, bool) {
 	return val, true
 }
 
+func (s *OperandStack) PopUint64s(n int) ([]uint64, bool) {
+	if len(s.slots) < n {
+		return nil, false
+	}
+
+	dividerIdx := len(s.slots) - n
+	out := s.slots[dividerIdx:]
+	s.slots = s.slots[:dividerIdx]
+
+	return out, true
+}
+
 func (s *OperandStack) PushBool(val bool) {
 	if val {
 		s.PushUint64(1)
@@ -81,4 +101,17 @@ func (s *OperandStack) PushUint32(val uint32) {
 
 func (s *OperandStack) PushUint64(val uint64) {
 	s.slots = append(s.slots, val)
+}
+
+func (s *OperandStack) PushUint64s(values ...uint64) {
+	s.slots = append(s.slots, values...)
+}
+
+func (s *OperandStack) Set(idx uint32, v uint64) bool {
+	if idx > uint32(s.Len()) {
+		return false
+	}
+
+	s.slots[idx] = v
+	return true
 }

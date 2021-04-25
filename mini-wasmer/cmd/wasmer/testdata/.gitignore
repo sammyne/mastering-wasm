@@ -1,3 +1,4 @@
-/memory.wasm
-/numeric.wasm
-/parametric.wasm
+/*.wasm
+
+!/chapter03-block.wasm
+!/hello-world.wasm

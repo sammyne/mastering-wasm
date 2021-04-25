@@ -7,6 +7,12 @@ type RunInstructionFunc = func(vm *VM, args interface{}) error
 var instructionTable [256]RunInstructionFunc
 
 func init() {
+	instructionTable[types.OpcodeBrIf] = BreakIf
+	instructionTable[types.OpcodeLocalGet] = LocalGet
+	instructionTable[types.OpcodeLocalSet] = LocalSet
+	instructionTable[types.OpcodeLocalTee] = LocalTee
+	instructionTable[types.OpcodeGlobalGet] = GlobalGet
+	instructionTable[types.OpcodeGlobalSet] = GlobalSet
 	instructionTable[types.OpcodeI32Load] = I32Load
 	instructionTable[types.OpcodeI64Load] = I64Load
 	instructionTable[types.OpcodeF32Load] = F32Load

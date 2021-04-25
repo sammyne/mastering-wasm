@@ -8,10 +8,13 @@ import (
 )
 
 type VM struct {
+	ControlStack
 	OperandStack
 
-	memory *Memory
-	module *wasmer.Module
+	globals   []GlobalVar
+	local0Idx uint32 // operand stack index for first operand
+	memory    *Memory
+	module    *wasmer.Module
 }
 
 func (vm *VM) ExecuteCode(idx int) error {
@@ -44,9 +47,17 @@ func Run(m *wasmer.Module) error {
 	}
 
 	vm := &VM{module: m}
+
 	if err := vm.initMemory(); err != nil {
 		return fmt.Errorf("init memory for VM: %w", err)
 	}
+	if err := vm.initGlobals(); err != nil {
+		return fmt.Errorf("init globals for VM: %w", err)
+	}
 
-	return vm.ExecuteCode(int(*m.Start) - len(m.Imports))
+	if err := Call(vm, *m.Start); err != nil {
+		return fmt.Errorf("set up control stack: %w", err)
+	}
+
+	return vm.loop()
 }
