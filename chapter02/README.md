@@ -150,7 +150,8 @@ xxd -u -g 1 hello-world.wasm
   sec: id|byte_count|byte+   # byte_count 有助于跳过某些段
   byte_count: u32            # LEB128 编码的 32 位无符号整数
   ```
-- 大部分段可以包含多个项目，以**向量**结构编码，用 `vec<T>` 表示。采用这种写法，段编码格式可简写为 `id|vec<byte>`，**后续部分会多次沿用这种简写格式**。
+- 大部分段可以包含多个项目，以**向量**结构编码，用 `vec<T>` 表示，具体编码方式为：先记录项目数量，然后再依次记录每个项目
+- 借助向量表示法，段编码格式可简写为 `id|vec<byte>`，**后续部分会多次沿用这种简写格式**。
 - 类型段的编码格式
   ```
   type_sec:  0x01|byte_count|vec<func_type>
@@ -240,10 +241,10 @@ xxd -u -g 1 hello-world.wasm
 
 ### 表段
 - Wasm 规范目前规定模块最多只能定义一张表，且元素类型必须为函数引用（编码为 0x70）
-- 除了元素类型，表还需要指定元素数量的限制，包括必须的下限和可选的上限
+- 除了元素类型，表还需要指定元素数量的限制，包括**必须的下限**和**可选的上限**
 - 编码格式如下
   ```
-  table_sec: 0x04|byte_count|vec<table_type> # 目前 vec 长度必须为 1
+   table_sec: 0x04|byte_count|vec<table_type> # 目前 vec 长度必须为 1
   table_type: 0x70|limits
       limits: tag|min|max?
   ```
@@ -272,7 +273,7 @@ xxd -u -g 1 hello-world.wasm
 - 内存只需指定内存页数限制
 - 编码格式如下
   ```
-   mem_sec:  0x50|byte_count|vec<mem_type> # 目前 vec 长度只能是 1
+   mem_sec: 0x50|byte_count|vec<mem_type> # 目前 vec 长度只能是 1
   mem_type: limits
     limits: tag|min|max?
   ```
@@ -298,10 +299,10 @@ xxd -u -g 1 hello-world.wasm
 ### 全局段
 - 编码格式如下
   ```
-  global_sec: 0x06|byte_count|vec<global>
-      global: global_type|init_expr
+   global_sec: 0x06|byte_count|vec<global>
+       global: global_type|init_expr
   global_type: val_type|mut
-        expr: byte*|0x0B
+         expr: byte*|0x0B
   ```
 - 借助 xdd 可看到如下部分输出
   ```bash
@@ -334,8 +335,8 @@ xxd -u -g 1 hello-world.wasm
 - 导出段列举模块的所有导出成员，只有被导出的成员才能被外界访问
 - 编码格式如下
   ```
-  export_sec: 0x07|byte_count|vec<export>
-      export: name|export_desc
+   export_sec: 0x07|byte_count|vec<export>
+       export: name|export_desc
   export_desc: tag|[func_idx, table_idx, mem_idx, global_idx]
   ```
 - 借助 xdd 可看到如下部分输出
@@ -440,8 +441,8 @@ xxd -u -g 1 hello-world.wasm
 - hello-world.wasm 碰巧没有数据段
 
 ### 自定义段
-- 相对于其他段，自定义有两点不同
-  - 自定义段不参与模块语义
+- 相对于其他段，自定义段有两点不同
+  - 不参与模块语义
   - 可以出现在任意非自定义段前后，且次数不限
 - Wasm 规范要求自定义段必须以一个字符串开头，标识自定义段
 - Wasm 规范在附录 7.4 定义了一个标准的自定义段，名为 `name`，专门用于存放模块名、内部函数名和局部变量名
