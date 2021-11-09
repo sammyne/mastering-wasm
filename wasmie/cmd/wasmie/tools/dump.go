@@ -3,9 +3,9 @@ package tools
 import (
 	"fmt"
 
-	wasmer "github.com/sammyne/mastering-wasm/mini-wasmer"
-	"github.com/sammyne/mastering-wasm/mini-wasmer/tools"
-	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
+	wasmer "github.com/sammyne/mastering-wasm/wasmie"
+	"github.com/sammyne/mastering-wasm/wasmie/tools"
+	"github.com/sammyne/mastering-wasm/wasmie/types"
 )
 
 type ImportCounts struct {

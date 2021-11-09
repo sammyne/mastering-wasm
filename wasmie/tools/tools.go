@@ -1,6 +1,6 @@
 package tools
 
-import "github.com/sammyne/mastering-wasm/mini-wasmer/types"
+import "github.com/sammyne/mastering-wasm/wasmie/types"
 
 func CountLocals(localsVec []types.Locals) uint64 {
 	var n uint64

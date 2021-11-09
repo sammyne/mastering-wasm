@@ -1,6 +1,6 @@
 package vm
 
-import "github.com/sammyne/mastering-wasm/mini-wasmer/types"
+import "github.com/sammyne/mastering-wasm/wasmie/types"
 
 type RunInstructionFunc = func(vm *VM, args interface{}) error
 

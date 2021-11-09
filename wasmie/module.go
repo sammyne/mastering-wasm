@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
+	"github.com/sammyne/mastering-wasm/wasmie/types"
 )
 
 type Module struct {

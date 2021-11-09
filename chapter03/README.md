@@ -43,7 +43,7 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
   - 控制指令参数
 - 内存指令：内存加载/存储系列指令需要指定内存偏移量和对齐提示
 - `block` 和 `loop` 指令
-  - wasm 使用 `block`、`loop` 和 `if` 这三种指令定义顺序、循环和分支结构的起点，均已 `end` 指令为终点，形成内部是嵌套得指令序列
+  - wasm 使用 `block`、`loop` 和 `if` 这三种指令定义顺序、循环和分支结构的起点，均以 `end` 指令为终点，形成内部是嵌套的指令序列
   - `br` 系列指令可跳出 `block` 和 `if` 块，或者重新开始 `loop` 块
   - **多返回值提案接受前**，块最多只有一个结果，其类型用一个字节表示（0x7F->`i32`，0x7E->`i64`，0x7D->`f32`，0x7C->`f64`，`0x40`->`void`）
   - **多返回值提案接受后**，块类型被重新解释为 LEB128 有符号整数
@@ -58,7 +58,7 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
 
 ### 操作数
 - wasm 规范实际上定义了一台概念上的**栈式虚拟机**。绝大多数得 wasm 指令都是基于这个栈式虚拟机工作：从栈顶弹出若干个数，进行计算，然后把结果压栈
-- 运行时位于栈顶并被指令操纵得数叫做指令的**动态操作数**，简称**操作数**。相应地，这个栈称为**操作数栈**。
+- 运行时位于栈顶并被指令操纵的数叫做指令的**动态操作数**，简称**操作数**。相应地，这个栈称为**操作数栈**。
 - 由于采用了栈式虚拟机，大部分 wasm 指令（特别是数值指令）都很短，只有一个操作码，因为操作数都已隐含在栈上。
 
 > Python 和 Ruby 等语言也用栈式虚拟机。Lua 和 Android 早期的 Dalvik 虚拟机采用的是寄存器虚拟机，其指令需要包含寄存器索引，所以寄存器虚拟机的指令一般较长。
@@ -68,7 +68,8 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
 - 4 条常量指令和饱和截断指令
   - `i32.const`/`i64.const` 带 `s32`/`s64` 类型的立即数，使用 LEB128 有符号编码
   - `f32.const`/`f64.const` 带 `f32`/`f64` 类型的立即数，固定占用 4/8 字节
-  - `trunc_sat`（操作码 0xFC）：格式为`前缀操作码（0x0F）+ 子操作码`，带一个单字节的子操作码作为立即数
+  - `trunc_sat`（操作码 0xFC）：格式为`前缀操作码（0xFC）+ 子操作码`，带一个单字节的子操作码作为立即数
+      > 书中前缀操作码为 0x0F 的说法个人觉得是不对的
 - 编码格式
   ```
   i32.const: 0x41|s32
@@ -104,9 +105,9 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
   - 2 条用于读写全局变量，立即数是全局变量索引
 - 编码格式
   ```
-  local.get:  0x20|local_idx
-  local.set:  0x21|local_idx
-  local.tee:  0x22|local_idx
+   local.get:  0x20|local_idx
+   local.set:  0x21|local_idx
+   local.tee:  0x22|local_idx
   global.get: 0x23|global_idx
   global.set: 0x24|global_idx
   ```
@@ -136,7 +137,7 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
 - 编码格式
 
   ```
-  load_instr: opcode|align|offset # align: u32, offset: u32
+   load_instr: opcode|align|offset # align: u32, offset: u32
   store_instr: opcode|align|offset
   memory.size: 0x3f|0x00
   memory.grow: 0x40|0x00
@@ -176,9 +177,9 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
 
   ```
   block_instr: 0x02|block_type|instr*|0x0b
-  loop_instr: 0x03|block_type|instr*|0x0b
-    if_instr: 0x04|block_type|instr*|(0x05|instr*)?|0x0b
-  block_type: s32
+   loop_instr: 0x03|block_type|instr*|0x0b
+     if_instr: 0x04|block_type|instr*|(0x05|instr*)?|0x0b
+   block_type: s32
   ```
 - 样例代码参见 [04-block.wat](./code/04-block.wat)，编译并执行可得如下输出
 
@@ -248,7 +249,7 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
 - 编码格式
 
   ```
-    call_instr: 0x10|func_idx
+     call_instr: 0x10|func_idx
   call_indirect: 0x11|type_idx|0x00
   ```
 - 间接函数调用指令需要查表才能完成，由第 2 个立即数指定查哪张表。目前由于模块最多只能导入或定义一张表，所以这个立即数只起到占位作用，必须为 0
@@ -272,9 +273,9 @@ wasm 规范共定义 178 条指令，按功能分为 5 大类
 ## 指令解码
 
 前面章节没有介绍指令和表达式解码逻辑，包括
-- 全局项得初始化表达式
-- 元素和数据项得偏移量表达式
-- 代码项得字节码
+- 全局项的初始化表达式
+- 元素和数据项的偏移量表达式
+- 代码项的字节码
 
 其编码格式如下
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/sammyne/mastering-wasm/mini-wasmer/tools"
-	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
+	"github.com/sammyne/mastering-wasm/wasmie/tools"
+	"github.com/sammyne/mastering-wasm/wasmie/types"
 )
 
 func (d *Decoder) decodeArgs(opcode byte) (interface{}, error) {

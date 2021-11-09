@@ -3,8 +3,8 @@ package vm
 import (
 	"fmt"
 
-	"github.com/sammyne/mastering-wasm/mini-wasmer/tools"
-	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
+	"github.com/sammyne/mastering-wasm/wasmie/tools"
+	"github.com/sammyne/mastering-wasm/wasmie/types"
 )
 
 func assertEq(a, b interface{}) {

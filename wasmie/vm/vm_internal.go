@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sammyne/mastering-wasm/mini-wasmer/types"
+	"github.com/sammyne/mastering-wasm/wasmie/types"
 )
 
 func (vm *VM) clearBlock(f ControlFrame) error {
