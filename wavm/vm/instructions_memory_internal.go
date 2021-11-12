@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/sammyne/mastering-wasm/wasmie/types"
+	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
 var byteOrder = binary.LittleEndian

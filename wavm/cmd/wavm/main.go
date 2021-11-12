@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	wasmer "github.com/sammyne/mastering-wasm/wasmie"
-	"github.com/sammyne/mastering-wasm/wasmie/cmd/wasmie/tools"
-	"github.com/sammyne/mastering-wasm/wasmie/vm"
+	wasmer "github.com/sammyne/mastering-wasm/wavm"
+	"github.com/sammyne/mastering-wasm/wavm/cmd/wasmie/tools"
+	"github.com/sammyne/mastering-wasm/wavm/vm"
 	
 	flag "github.com/spf13/pflag"
 )

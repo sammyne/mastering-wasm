@@ -3,8 +3,8 @@ package vm
 import (
 	"fmt"
 
-	"github.com/sammyne/mastering-wasm/wasmie/tools"
-	"github.com/sammyne/mastering-wasm/wasmie/types"
+	"github.com/sammyne/mastering-wasm/wavm/tools"
+	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
 func Block(vm *VM, arg interface{}) error {

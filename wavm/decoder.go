@@ -7,8 +7,8 @@ import (
 	"io"
 	"math"
 
-	localBinaryPkg "github.com/sammyne/mastering-wasm/wasmie/encoding/binary"
-	"github.com/sammyne/mastering-wasm/wasmie/types"
+	localBinaryPkg "github.com/sammyne/mastering-wasm/wavm/encoding/binary"
+	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
 type Decoder struct {

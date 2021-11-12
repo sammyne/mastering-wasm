@@ -7,7 +7,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/sammyne/mastering-wasm/wasmie/encoding/binary"
+	"github.com/sammyne/mastering-wasm/wavm/encoding/binary"
 )
 
 func TestReadUvarint32(t *testing.T) {

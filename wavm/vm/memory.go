@@ -1,6 +1,6 @@
 package vm
 
-import "github.com/sammyne/mastering-wasm/wasmie/types"
+import "github.com/sammyne/mastering-wasm/wavm/types"
 
 type Memory struct {
 	Type types.Memory

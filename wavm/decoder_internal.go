@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/sammyne/mastering-wasm/wasmie/tools"
-	"github.com/sammyne/mastering-wasm/wasmie/types"
+	"github.com/sammyne/mastering-wasm/wavm/tools"
+	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
 func (d *Decoder) decodeArgs(opcode byte) (interface{}, error) {

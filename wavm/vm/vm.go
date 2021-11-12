@@ -3,8 +3,8 @@ package vm
 import (
 	"fmt"
 
-	wasmer "github.com/sammyne/mastering-wasm/wasmie"
-	"github.com/sammyne/mastering-wasm/wasmie/types"
+	wasmer "github.com/sammyne/mastering-wasm/wavm"
+	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
 type VM struct {
