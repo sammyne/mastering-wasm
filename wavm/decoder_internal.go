@@ -243,7 +243,7 @@ func (d *Decoder) decodeDatum(out *types.Data) error {
 }
 
 func (d *Decoder) decodeElement(out *types.Element) error {
-	tableIdx, err := d.DecodeUint32()
+	tableIdx, err := d.DecodeUvarint32()
 	if err != nil {
 		return fmt.Errorf("decode table index: %w", err)
 	}

@@ -49,6 +49,7 @@ func init() {
 
 	// @TODO: sort
 	instructionTable[types.OpcodeCall] = Call // hack!
+	instructionTable[types.OpcodeCallIndirect] = CallIndirect
 	instructionTable[types.OpcodeDrop] = Drop
 	instructionTable[types.OpcodeSelect] = Select
 	instructionTable[types.OpcodeI32Const] = I32Const

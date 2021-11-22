@@ -55,6 +55,8 @@ type FuncType struct {
 	ResultTypes []ValueType
 }
 
+type GoFunc = func(args []WasmVal) ([]WasmVal, error)
+
 type Global struct {
 	Type GlobalType
 	Init Expr
@@ -96,6 +98,8 @@ type Table struct {
 	ElementType byte
 	Limits      Limits
 }
+
+type WasmVal = interface{}
 
 func (t FuncType) String() string {
 	var b strings.Builder

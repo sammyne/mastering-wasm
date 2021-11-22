@@ -48,6 +48,19 @@ func (vm *VM) exitBlock() error {
 	return vm.clearBlock(frame)
 }
 
+func (vm *VM) initFuncs() error {
+	if err := vm.linkNativeFuncs(); err != nil {
+		return fmt.Errorf("link native funcs: %w", err)
+	}
+	for i, v := range vm.module.Functions {
+		t := vm.module.Types[v]
+		code := vm.module.Codes[i]
+		vm.funcs = append(vm.funcs, newInternalFunc(t, code))
+	}
+
+	return nil
+}
+
 func (vm *VM) initGlobals() error {
 	for i, v := range vm.module.Globals {
 		for j, w := range v.Init {
@@ -92,6 +105,63 @@ func (vm *VM) initMemory() error {
 	return nil
 }
 
+func (vm *VM) initTable() error {
+	if len(vm.module.Tables) > 0 {
+		vm.table = newTable(vm.module.Tables[0])
+	}
+
+	for i, v := range vm.module.Elements {
+		for k, vv := range v.Offset {
+			if err := vm.ExecuteInstruction(vv); err != nil {
+				return fmt.Errorf("eval %d-th offset for %d-th elem: %w", k, i, err)
+			}
+		}
+
+		offset, ok := vm.PopUint32()
+		if !ok {
+			return fmt.Errorf("eval offset for %d-th elem: %w", i, ErrOperandPop)
+		}
+
+		for j, funcIdx := range v.Init {
+			vm.table.SetElem(offset+uint32(j), vm.funcs[funcIdx])
+		}
+	}
+
+	return nil
+}
+
+func (vm *VM) linkNativeFuncs() error {
+	for _, v := range vm.module.Imports {
+		if v.Description.Tag != types.PortTagFunc || v.Module != "env" {
+			continue
+		}
+
+		t := vm.module.Types[v.Description.Func]
+		var fn types.GoFunc
+		switch v.Name {
+		case "assert_true":
+			fn = assertTrue
+		case "assert_false":
+			fn = assertFalse
+		case "assert_eq_i32":
+			fn = assertEqI32
+		case "assert_eq_i64":
+			fn = assertEqI64
+		case "assert_eq_f32":
+			fn = assertEqF32
+		case "assert_eq_f64":
+			fn = assertEqF64
+		case "print_char":
+			fn = printChar
+		default:
+			return fmt.Errorf("unknown import func: %q", v.Name)
+		}
+		vm.funcs = append(vm.funcs, newExternalFunc(t, fn))
+	}
+
+	return nil
+}
+
 func (vm *VM) loop() error {
 	depth := vm.ControlStack.Len()
 	for vm.ControlStack.Len() >= depth {
@@ -115,6 +185,22 @@ func (vm *VM) loop() error {
 	}
 
 	return nil
+}
+
+func (vm *VM) popArgs(t types.FuncType) ([]types.WasmVal, error) {
+	out := make([]types.WasmVal, len(t.ParamTypes))
+	for i := len(t.ParamTypes) - 1; i >= 0; i-- {
+		v, ok := vm.PopUint64()
+		if !ok {
+			return nil, fmt.Errorf("miss arg[%d]: %w", i, ErrOperandPop)
+		}
+		var err error
+		if out[i], err = wrapUint64(t.ParamTypes[i], v); err != nil {
+			return nil, fmt.Errorf("parse args[%d]: %w", i, err)
+		}
+	}
+
+	return out, nil
 }
 
 func (vm *VM) popTowFloat32() (float32, float32, error) {
@@ -199,6 +285,18 @@ func (vm *VM) popTowUint64() (uint64, uint64, error) {
 	}
 
 	return v1, v2, nil
+}
+
+func (vm *VM) pushResults(t types.FuncType, results []types.WasmVal) error {
+	for i, v := range results {
+		vv, err := unwrapUint64(t.ResultTypes[i], v)
+		if err != nil {
+			return fmt.Errorf("push results[%d]: %w", i, err)
+		}
+		vm.PushUint64(vv)
+	}
+
+	return nil
 }
 
 func (vm *VM) resetBlock(f *ControlFrame) error {

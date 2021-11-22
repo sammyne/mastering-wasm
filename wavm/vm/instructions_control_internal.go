@@ -7,52 +7,36 @@ import (
 	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
-func assertEq(a, b interface{}) {
-	if a != b {
-		panic(fmt.Errorf("%v != %v", a, b))
+func callFunc(vm *VM, f Func) error {
+	if f.goFunc != nil {
+		return callExternalFunc(vm, f.type_, f.goFunc)
 	}
+
+	return callInternalFunc(vm, f)
 }
 
-func callAssertFunc(vm *VM, idx uint32) error {
-	var err error
-	switch vm.module.Imports[idx].Name {
-	case "assert_true":
-		assertEq(vm.mustPopBool(), true)
-	case "assert_false":
-		assertEq(vm.mustPopBool(), false)
-	case "assert_eq_i32":
-		assertEq(vm.mustPopUint32(), vm.mustPopUint32())
-	case "assert_eq_i64":
-		assertEq(vm.mustPopUint64(), vm.mustPopUint64())
-	case "assert_eq_f32":
-		assertEq(vm.mustPopFloat32(), vm.mustPopFloat32())
-	case "assert_eq_f64":
-		assertEq(vm.mustPopFloat64(), vm.mustPopFloat64())
-	default:
-		err = ErrBadArgs
+func callExternalFunc(vm *VM, t types.FuncType, f types.GoFunc) error {
+	args, err := vm.popArgs(t)
+	if err != nil {
+		return fmt.Errorf("pop args: %w", err)
 	}
 
-	return err
+	results, err := f(args)
+	if err != nil {
+		return fmt.Errorf("call go func: %w", err)
+	}
+
+	if err := vm.pushResults(t, results); err != nil {
+		return fmt.Errorf("push results: %w", err)
+	}
+
+	return nil
 }
 
-func callInternalFunc(vm *VM, idx uint32) error {
-	if ell := uint32(len(vm.module.Functions)); idx >= ell {
-		return fmt.Errorf("func idx out of bound(%d): %w", ell, ErrBadArgs)
-	}
-	if ell := uint32(len(vm.module.Codes)); idx >= ell {
-		return fmt.Errorf("code idx out of bound(%d): %w", ell, ErrBadArgs)
-	}
+func callInternalFunc(vm *VM, f Func) error {
+	vm.enterBlock(types.OpcodeCall, f.type_, f.code.Expr)
 
-	typeIdx := vm.module.Functions[idx]
-	if ell := uint32(len(vm.module.Types)); typeIdx >= ell {
-		return fmt.Errorf("func type idx out of bound(%d): %w", ell, ErrBadArgs)
-	}
-
-	code := vm.module.Codes[idx]
-
-	vm.enterBlock(types.OpcodeCall, vm.module.Types[typeIdx], code.Expr)
-
-	for i := tools.CountLocals(code.Locals); i > 0; i-- {
+	for i := tools.CountLocals(f.code.Locals); i > 0; i-- {
 		vm.PushUint64(0)
 	}
 

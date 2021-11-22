@@ -104,21 +104,35 @@ func BreakTable(vm *VM, arg interface{}) error {
 
 func Call(vm *VM, arg interface{}) error {
 	idx, ok := arg.(uint32)
-	if !ok {
+	if !ok || idx >= uint32(len(vm.funcs)) {
 		return ErrBadArgs
 	}
 
-	var err error
-	if ell := uint32(len(vm.module.Imports)); idx < ell {
-		err = callAssertFunc(vm, idx)
-	} else {
-		err = callInternalFunc(vm, idx-ell)
-	}
-	if err != nil {
-		return fmt.Errorf("run func(%d): %w", idx, err)
+	return callFunc(vm, vm.funcs[idx])
+}
+
+func CallIndirect(vm *VM, arg interface{}) error {
+	elemIdx, ok := vm.PopUint32()
+	if !ok {
+		return fmt.Errorf("no elem idx: %w", ErrOperandPop)
 	}
 
-	return nil
+	f, err := vm.table.GetElem(elemIdx)
+	if err != nil {
+		return fmt.Errorf("miss elem at %d: %w", elemIdx, err)
+	}
+
+	typeIdx, ok := arg.(uint32)
+	if !ok {
+		return fmt.Errorf("arg should be u32: %w", ErrBadArgs)
+	}
+	funcType := vm.module.Types[typeIdx] // bound check
+
+	if expect, got := funcType.String(), f.type_.String(); expect != got {
+		return fmt.Errorf("mismatch func type: expect %s, got %s, %w", expect, got, ErrBadArgs)
+	}
+
+	return callFunc(vm, f)
 }
 
 func Loop(vm *VM, arg interface{}) error {
