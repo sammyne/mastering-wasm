@@ -339,89 +339,20 @@ wasm 程序的执行环境是一台栈式虚拟机。绝大多数 wasm 指令都
   - 浮点数精度调整（demote，promote）
   - 比特位重新解释（reinterpret）
 - 相关指令汇总如下
-  <table border="1px">
-    <thead>
-      <tr>
-        <td></td>
-        <td>转换后</td>
-        <td>i32</td>
-        <td>i64</td>
-        <td>f32</td>
-        <td>f64</td>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td rowspan="12">转换前</td>
-        <td rowspan="3">i32</td>
-        <td>i32.extend8_s</td>
-        <td>i64.extend_i32_s</td>
-        <td>f32.convert_i32_s</td>
-        <td>f64.convert_i32_s</td>
-      </tr>
-      <tr>
-        <td>i32.extend16_s</td>
-        <td>i64.extend_i32_u</td>
-        <td>f32.convert_i32_u</td>
-        <td>f64.convert_i32_u</td>
-      </tr>
-      <tr>
-        <td></td>
-        <td></td>
-        <td>f32.reinterpret_i32</td>
-        <td></td>
-      </tr>
-      <tr>
-        <td rowspan="3">i64</td>
-        <td>i32.wrap_i64</td>
-        <td>i64.extend8_s</td>
-        <td>f32.convert_i64_s</td>
-        <td>f64.convert_i64_s</td>
-      </tr>
-      <tr>
-        <td rowspan="2"></td>
-        <td>i64.extend16_s</td>
-        <td>f32.convert_i64_u</td>
-        <td>f64.convert_i64_u</td>
-      </tr>
-      <tr>
-        <td>i64.extend32_s</td>
-        <td></td>
-        <td>f64.reinterpret_i64</td>
-      </tr>
-      <tr>
-        <td rowspan="3">f32</td>
-        <td>i32.trunc_f32_s</td>
-        <td>i64.trunc_f32_s</td>
-        <td rowspan="3"></td>
-        <td>f64.promote_f32</td>
-      </tr>
-      <tr>
-        <td>i32.trunc_f32_u</td>
-        <td>i64.trunc_f32_u</td>
-        <td rowspan="2"></td>
-      </tr>
-      <tr>
-        <td>i32.reinterpret_f32</td>
-      </tr>
-      <tr>
-        <td rowspan="3">f64</td>
-        <td>i32.trunc_f64_s</td>
-        <td>i64.trunc_f64_s</td>
-        <td>f32.demote_f64</td>
-        <td rowspan="3"></td>
-      </tr>
-      <tr>
-        <td>i32.trunc_f64_u</td>
-        <td>i64.trunc_f64_u</td>
-        <td rowspan="2"></td>
-      </tr>
-      <tr>
-        <td></td>
-        <td>i64.reinterpret_f64</td>
-      </tr>
-    </tbody>
-  </table>
+    转换前\转换后 | i32 | i64 | f32 | f64
+    ------------:|-----|-----|-----|-------
+    i32 | i32.extend8_s | i64.extend_i32_s | f32.convert_i32_s | f64.convert_i32_s
+    i32 | i32.extend16_s | i64.extend_i32_u | f32.convert_i32_u | f64.convert_i32_u
+    i32 | | | f32.reinterpret_i32 | 
+    i64 | i32.wrap_i64 | i64.extend8_s | f32.convert_i64_s | f64.convert_i64_s
+    i64 | | i64.extend16_s | f32.convert_i64_u | f64.convert_i64_u
+    i64 | | i64.extend32_s | | f64.reinterpret_i64
+    f32 | i32.trunc_f32_s | i64.trunc_f32_s | | f64.promote_f32
+    f32 | i32.trunc_f32_u | i64.trunc_f32_u | | 
+    f32 | i32.reinterpret_f32 | | | 
+    f64 | i32.trunc_f64_s | i64.trunc_f64_s | f32.demote_f64 | 
+    f64 | i32.trunc_f64_u | i64.trunc_f64_u | | 
+    f64 | | i64.reinterpret_f64 | | 
 
 - 两个某种类型的数的计算结果可能会超出该类型的表达范围，触发上溢（overflow）或下溢（underflow）
 - 溢出的处理方式有 3 种如下
