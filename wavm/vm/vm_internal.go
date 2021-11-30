@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/sammyne/mastering-wasm/wavm/linker"
 	"github.com/sammyne/mastering-wasm/wavm/types"
 )
 
@@ -48,14 +49,21 @@ func (vm *VM) exitBlock() error {
 	return vm.clearBlock(frame)
 }
 
-func (vm *VM) initFuncs() error {
-	if err := vm.linkNativeFuncs(); err != nil {
-		return fmt.Errorf("link native funcs: %w", err)
+func (vm *VM) execStartFunc() error {
+	idx := vm.module.Start
+	if idx == nil {
+		return nil
 	}
+
+	_, err := vm.funcs[*idx].call(nil)
+	return err
+}
+
+func (vm *VM) initFuncs() error {
 	for i, v := range vm.module.Functions {
 		t := vm.module.Types[v]
 		code := vm.module.Codes[i]
-		vm.funcs = append(vm.funcs, newInternalFunc(t, code))
+		vm.funcs = append(vm.funcs, newInternalFunc(t, code, vm))
 	}
 
 	return nil
@@ -130,33 +138,37 @@ func (vm *VM) initTable() error {
 	return nil
 }
 
-func (vm *VM) linkNativeFuncs() error {
-	for _, v := range vm.module.Imports {
-		if v.Description.Tag != types.PortTagFunc || v.Module != "env" {
-			continue
-		}
+func (vm *VM) linkImport(m linker.Module, i types.Import) error {
+	exported, err := m.GetMember(i.Name)
+	if err != nil {
+		return fmt.Errorf("get module member: %w", err)
+	}
 
-		t := vm.module.Types[v.Description.Func]
-		var fn types.GoFunc
-		switch v.Name {
-		case "assert_true":
-			fn = assertTrue
-		case "assert_false":
-			fn = assertFalse
-		case "assert_eq_i32":
-			fn = assertEqI32
-		case "assert_eq_i64":
-			fn = assertEqI64
-		case "assert_eq_f32":
-			fn = assertEqF32
-		case "assert_eq_f64":
-			fn = assertEqF64
-		case "print_char":
-			fn = printChar
-		default:
-			return fmt.Errorf("unknown import func: %q", v.Name)
+	switch x := exported.(type) {
+	case linker.Function:
+		vm.funcs = append(vm.funcs, newExternalFunc(x.Type(), x, vm))
+	case linker.Global:
+		vm.globals = append(vm.globals, x)
+	case linker.Memory:
+		vm.memory = x
+	case linker.Table:
+		vm.table = x
+	default:
+		return fmt.Errorf("unknown member type: %T", x)
+	}
+
+	return nil
+}
+
+func (vm *VM) linkImports(imports map[string]linker.Module) error {
+	for _, v := range vm.module.Imports {
+		m, ok := imports[v.Module]
+		if !ok {
+			return fmt.Errorf("module(%s) not found", v.Module)
 		}
-		vm.funcs = append(vm.funcs, newExternalFunc(t, fn))
+		if err := vm.linkImport(m, v); err != nil {
+			return fmt.Errorf("link module(%s): %w", v.Module, err)
+		}
 	}
 
 	return nil
@@ -198,6 +210,23 @@ func (vm *VM) popArgs(t types.FuncType) ([]types.WasmVal, error) {
 		if out[i], err = wrapUint64(t.ParamTypes[i], v); err != nil {
 			return nil, fmt.Errorf("parse args[%d]: %w", i, err)
 		}
+	}
+
+	return out, nil
+}
+
+func (vm *VM) popResults(resultTypes []types.ValueType) ([]types.WasmVal, error) {
+	out := make([]types.WasmVal, len(resultTypes))
+	for i := len(out) - 1; i >= 0; i-- {
+		v, ok := vm.PopUint64()
+		if !ok {
+			return nil, fmt.Errorf("pop %d-th result: %w", i, ErrOperandPop)
+		}
+		vv, err := wrapUint64(resultTypes[i], v)
+		if err != nil {
+			return nil, fmt.Errorf("wrap result as uint64: %w", err)
+		}
+		out[i] = vv
 	}
 
 	return out, nil
@@ -285,6 +314,22 @@ func (vm *VM) popTowUint64() (uint64, uint64, error) {
 	}
 
 	return v1, v2, nil
+}
+
+func (vm *VM) pushArgs(paramTypes []types.ValueType, args []types.WasmVal) error {
+	if len(paramTypes) != len(args) {
+		return fmt.Errorf("len(paramTypes)=%d != len(args)=%d", len(paramTypes), len(args))
+	}
+
+	for i, v := range paramTypes {
+		w, err := unwrapUint64(v, args[i])
+		if err != nil {
+			return fmt.Errorf("unwrap %d-th arg: %w", i, err)
+		}
+		vm.PushUint64(w)
+	}
+
+	return nil
 }
 
 func (vm *VM) pushResults(t types.FuncType, results []types.WasmVal) error {

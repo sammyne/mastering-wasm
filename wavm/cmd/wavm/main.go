@@ -5,9 +5,8 @@ import (
 	"os"
 
 	wasmer "github.com/sammyne/mastering-wasm/wavm"
-	"github.com/sammyne/mastering-wasm/wavm/cmd/wasmie/tools"
-	"github.com/sammyne/mastering-wasm/wavm/vm"
-	
+	"github.com/sammyne/mastering-wasm/wavm/cmd/wavm/tools"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -29,16 +28,24 @@ func main() {
 
 	if dump {
 		if err := tools.Dump(module); err != nil {
-			panic(fmt.Sprintf("fail to dump: %v", err))
+			panicf("fail to dump: %v", err)
 		}
 		return
 	}
 
-	if err := vm.Run(module); err != nil {
-		panic(fmt.Sprintf("fail to run: %v", err))
+	if err := tools.InstantiateAndExecMainFunc(module); err != nil {
+		panicf("instantiate and exec main func: %v", err)
 	}
+
+	//if err := vm.Run(module); err != nil {
+	//	panic(fmt.Sprintf("fail to run: %v", err))
+	//}
 }
 
 func init() {
 	flag.BoolVarP(&dump, "dump", "d", false, "")
+}
+
+func panicf(format string, args ...interface{}) {
+	panic(fmt.Sprintf(format, args...))
 }

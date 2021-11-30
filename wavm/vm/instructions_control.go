@@ -128,11 +128,15 @@ func CallIndirect(vm *VM, arg interface{}) error {
 	}
 	funcType := vm.module.Types[typeIdx] // bound check
 
-	if expect, got := funcType.String(), f.type_.String(); expect != got {
+	if expect, got := funcType.String(), f.Type().String(); expect != got {
 		return fmt.Errorf("mismatch func type: expect %s, got %s, %w", expect, got, ErrBadArgs)
 	}
 
-	return callFunc(vm, f)
+	if v, ok := f.(Func); ok {
+		return callFunc(vm, v)
+	}
+
+	return callExternalFunc(vm, f)
 }
 
 func Loop(vm *VM, arg interface{}) error {

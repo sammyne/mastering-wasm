@@ -12,7 +12,7 @@ func GlobalGet(vm *VM, args interface{}) error {
 		return fmt.Errorf("index out of bound(%d): %w", ell, ErrBadArgs)
 	}
 
-	vm.OperandStack.PushUint64(vm.globals[idx].ToUint64())
+	vm.OperandStack.PushUint64(vm.globals[idx].GetAsUint64())
 	return nil
 }
 
@@ -31,7 +31,7 @@ func GlobalSet(vm *VM, args interface{}) error {
 		return ErrOperandPop
 	}
 
-	return vm.globals[idx].FromUint64(val)
+	return vm.globals[idx].SetAsUint64(val)
 }
 
 func LocalGet(vm *VM, args interface{}) error {

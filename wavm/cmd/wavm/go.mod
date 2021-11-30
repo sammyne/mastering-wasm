@@ -1,4 +1,4 @@
-module github.com/sammyne/mastering-wasm/wavm/cmd/wasmie
+module github.com/sammyne/mastering-wasm/wavm/cmd/wavm
 
 go 1.16
 

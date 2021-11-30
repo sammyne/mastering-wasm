@@ -55,8 +55,6 @@ type FuncType struct {
 	ResultTypes []ValueType
 }
 
-type GoFunc = func(args []WasmVal) ([]WasmVal, error)
-
 type Global struct {
 	Type GlobalType
 	Init Expr
