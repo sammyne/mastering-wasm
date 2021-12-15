@@ -10,7 +10,10 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-var dump bool
+var (
+	dump  bool
+	check bool
+)
 
 func main() {
 	flag.Parse()
@@ -31,6 +34,12 @@ func main() {
 			panicf("fail to dump: %v", err)
 		}
 		return
+	} else if check {
+		if err := tools.Check(module); err != nil {
+			panicf("invalid module: %v", err)
+		}
+		fmt.Println("module is good :)")
+		return
 	}
 
 	if err := tools.InstantiateAndExecMainFunc(module); err != nil {
@@ -44,6 +53,7 @@ func main() {
 
 func init() {
 	flag.BoolVarP(&dump, "dump", "d", false, "")
+	flag.BoolVarP(&check, "check", "c", false, "check wasm file")
 }
 
 func panicf(format string, args ...interface{}) {

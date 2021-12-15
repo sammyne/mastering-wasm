@@ -1,6 +1,7 @@
 package wavm
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -22,6 +23,28 @@ type Module struct {
 	Elements  []types.Element
 	Codes     []types.Code
 	Data      []types.Data
+}
+
+func (m *Module) GetBlockType(t types.BlockType) (types.FuncType, error) {
+	switch t {
+	case types.BlockTypeI32:
+		return types.FuncType{ResultTypes: []types.ValueType{types.ValueTypeI32}}, nil
+	case types.BlockTypeI64:
+		return types.FuncType{ResultTypes: []types.ValueType{types.ValueTypeI64}}, nil
+	case types.BlockTypeF32:
+		return types.FuncType{ResultTypes: []types.ValueType{types.ValueTypeF32}}, nil
+	case types.BlockTypeF64:
+		return types.FuncType{ResultTypes: []types.ValueType{types.ValueTypeF64}}, nil
+	case types.BlockTypeEmpty:
+		return types.FuncType{}, nil
+	default:
+	}
+
+	if int(t) >= len(m.Types) {
+		return types.FuncType{}, errors.New("index out of bound")
+	}
+
+	return types.FuncType{}, errors.New("no such block")
 }
 
 func DecodeModuleFromFile(filename string) (*Module, error) {

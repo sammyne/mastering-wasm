@@ -6,6 +6,7 @@ import (
 	"github.com/sammyne/mastering-wasm/wavm"
 	"github.com/sammyne/mastering-wasm/wavm/linker"
 	"github.com/sammyne/mastering-wasm/wavm/types"
+	"github.com/sammyne/mastering-wasm/wavm/validator"
 )
 
 type VM struct {
@@ -111,6 +112,10 @@ func (vm *VM) SetGlobalVal(name string, val types.WasmVal) error {
 }
 
 func NewVM(m *wavm.Module, externals map[string]linker.Module) (linker.Module, error) {
+	if err := validator.Validate(*m); err != nil {
+		return nil, fmt.Errorf("invalid main module: %w", err)
+	}
+
 	vm := &VM{module: m}
 
 	if err := vm.linkImports(externals); err != nil {
